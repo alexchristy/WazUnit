@@ -1,0 +1,11 @@
+{
+    "tests": [
+        {
+            "rule_id": "100004",
+            "format": "auditd",
+            "description": "/etc/passwd was modified by ubuntu as user: root",
+            "log_location": "/var/log/audit/audit.log",
+            "log_file": "100004.txt" 
+        }
+    ]
+}

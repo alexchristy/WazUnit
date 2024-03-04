@@ -7,6 +7,42 @@ import urllib3
 # Suppress only the single InsecureRequestWarning from urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+def print_green(text):
+    """Prints the given text in green color.
+    
+    Args:
+    ----
+        text (str): The text to print in green color.
+        
+    Returns:
+    -------
+        None"""
+    print("\033[92m" + text + "\033[0m")
+
+def print_red(text):
+    """Prints the given text in red color.
+    
+    Args:
+    ----
+        text (str): The text to print in red color.
+        
+    Returns:
+    -------
+        None"""
+    print("\033[91m" + text + "\033[0m")
+
+def print_yellow(text):
+    """Prints the given text in yellow color.
+    
+    Args:
+    ----
+        text (str): The text to print in yellow color.
+        
+    Returns:
+    -------
+        None"""
+    print("\033[93m" + text + "\033[0m")
+
 def get_auth_token(user: str, password: str, host: str, protocol: str = "https", port: int = 55000, login_endpoint: str = "security/user/authenticate") -> Optional[str]:
     """
     Function to obtain the authentication token for API access.
@@ -32,18 +68,18 @@ def get_auth_token(user: str, password: str, host: str, protocol: str = "https",
     }
     
     try:
-        print("\nLogin request ...\n")
+        print("\nLogin request...")
         response = requests.post(login_url, headers=login_headers, verify=False)
         response.raise_for_status()  # Raise an error for bad responses
         token = json.loads(response.content.decode())['data']['token']
-        print(f"Token received succesfully ✅")
+        print_green("Token obtained successfully.")
         return token
     except requests.RequestException as e:
-        print(f"Request failed: {e}")
+        print_red(f"Request failed: {e}")
     except KeyError:
-        print("Unexpected response format.")
+        print_red("Unexpected response format.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print_red(f"An error occurred: {e}")
     
     return None
 
@@ -55,7 +91,7 @@ def test_api_connection(token: str, host: str, protocol: str = "https", port: in
     }
 
     try:
-        print("\nTesting API connection ...\n")
+        print("\nTesting API connection ...")
         response = requests.get(test_url, headers=test_headers, verify=False)
         response.raise_for_status()
         
@@ -66,27 +102,32 @@ def test_api_connection(token: str, host: str, protocol: str = "https", port: in
         api_title  = data["data"].get("title", None)
 
         if not api_title or api_title != "Wazuh API REST":
-            print("API Title not found in response.")
+            print_red("API Title not found in response.")
             return False
         
         if data["data"].get("hostname", None):
-            print(f"Sucessfully connected to Manager: {data['data']['hostname']} ✅")
+            print_green(f"Sucessfully connected to manager: {data['data']['hostname']}")
 
         return True
     
     except requests.RequestException as e:
-        print(f"API Connection Test Failed: {e}")
+        print_red(f"API Connection Test Failed: {e}")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print_red(f"An error occurred: {e}")
 
     return False
 
 
 
-token = get_auth_token(user="wazuh-api-user", password="DNSTooC00L@Skool", host="10.0.0.5")
 
-if not token:
-    print("Failed to obtain token.")
-    exit(1)
+def main():
+    token = get_auth_token(user="wazuh-api-user", password="DNSTooC00L@Skool", host="10.0.0.5")
 
-test_api_connection(token, host="10.0.0.5")
+    if not token:
+        print("Failed to obtain token.")
+        exit(1)
+
+    test_api_connection(token, host="10.0.0.5")
+
+if __name__ == "__main__":
+    main()

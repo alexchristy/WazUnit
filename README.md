@@ -27,7 +27,8 @@
 
 ## About the Project
 
-![image](https://github.com/alexchristy/Wazuh-Unit-Test/assets/80216803/bf770a8a-831c-4d38-afe5-c632af408a86)
+
+![image](https://github.com/alexchristy/Wazuh-Unit-Test/assets/80216803/adc1e6b0-f37f-4813-901a-48f99a3adf79)
 
 
 This is project is here to make it simple to modify your Wazuh decoders and rulesets with confidence. By leveraging the [Wazuh Logtest tool](https://documentation.wazuh.com/current/user-manual/ruleset/testing.html) and [Wazuh API](https://documentation.wazuh.com/current/user-manual/api/getting-started.html), you can now automate and test your Wazuh rules easily.

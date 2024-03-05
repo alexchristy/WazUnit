@@ -1,0 +1,18 @@
+{
+    "tests": [
+        {
+            "rule_id": "502",
+            "rule_level": "3",
+            "format": "ossec",
+            "description": "Wazuh server started.",
+            "log_file": "502.txt" 
+        },
+        {
+            "rule_id": "5104",
+            "rule_level": "8",
+            "format": "syslog",
+            "description": "Interface entered in promiscuous(sniffing) mode.",
+            "log_file": "5104.txt"
+        }
+    ]
+}

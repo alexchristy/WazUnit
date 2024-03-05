@@ -6,6 +6,20 @@
             "format": "wazuh",
             "description": "Agent event queue is full. Events may be lost.",
             "log_file": "203.txt" 
+        },
+        {
+            "rule_id": "5710",
+            "rule_level": "5",
+            "format": "syslog",
+            "description": "sshd: Attempt to login using a non-existent user",
+            "log_file": "5710.txt"
+        },
+        {
+            "rule_id": "5710",
+            "rule_level": "5",
+            "format": "syslog",
+            "description": "sshd: Attempt to login using a non-existent user",
+            "log_file": "5710-local-net.txt"
         }
     ]
 }

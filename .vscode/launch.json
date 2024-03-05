@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Default Debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-d", "./tests/",
+                "-u", "wazuh-api-user",
+                "-p", "DNSTooC00L@Skool",
+                "-t", "3",
+                "10.0.0.5"
+            ]
+        }
+    ]
+}

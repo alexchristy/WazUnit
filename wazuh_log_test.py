@@ -4,7 +4,7 @@ import os
 class WazuhLogTest:
     """Class to represesnt a single Wazuh log test file."""
 
-    def __init__(self, rule_id: int, format: str, rule_description: str, log_file: str):
+    def __init__(self, rule_id: int, rule_level: int, format: str, rule_description: str, log_file: str):
         """
         Constructor for the WazuhLogTest class.
         
@@ -28,8 +28,12 @@ class WazuhLogTest:
 
         if not format or not isinstance(format, str):
             raise ValueError("Log format cannot be empty.")
+        
+        if not rule_level or not isinstance(rule_level, int):
+            raise ValueError("Rule level cannot be empty.")
 
         self.rule_id = rule_id
+        self.rule_level = rule_level
         self.rule_description = rule_description
         self.log_file = log_file
         self.format = format
@@ -46,6 +50,16 @@ class WazuhLogTest:
             log = file.readline().strip("\n")
 
         return log
+    
+    def get_rule_level(self) -> int:
+        """
+        Returns the rule level for the test.
+        
+        Returns:
+        -------
+            int: The rule level for the test.
+        """
+        return self.rule_level
     
     def get_rule_id(self) -> int:
         """

@@ -6,59 +6,28 @@ import urllib3
 import argparse
 import os
 from typing import Tuple
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm # type: ignore
 
 from wazuh_log_test import WazuhLogTest
 
 # Suppress only the single InsecureRequestWarning from urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def print_green(text):
-    """Prints the given text in green color.
-    
-    Args:
-    ----
-        text (str): The text to print in green color.
-        
-    Returns:
-    -------
-        None"""
-    print("\033[92m" + text + "\033[0m")
-
 def print_red(text):
-    """Prints the given text in red color.
-    
-    Args:
-    ----
-        text (str): The text to print in red color.
-        
-    Returns:
-    -------
-        None"""
-    print("\033[91m" + text + "\033[0m")
+    tqdm.write("\033[91m" + text + "\033[0m")
+
+def print_green(text):
+    tqdm.write("\033[92m" + text + "\033[0m")
 
 def print_yellow(text):
-    """Prints the given text in yellow color.
-    
-    Args:
-    ----
-        text (str): The text to print in yellow color.
-        
-    Returns:
-    -------
-        None"""
-    print("\033[93m" + text + "\033[0m")
+    tqdm.write("\033[93m" + text + "\033[0m")
+
+def print_white(text):
+    tqdm.write("\033[97m" + text + "\033[0m")
 
 def print_bold_white(text: str):
-    """Prints the given text in bold white color on the terminal.
-    
-    Args:
-        text (str): The text to print.
-    """
-    # ANSI escape code for bold white
-    bold_white = '\033[1;37m'
-    # ANSI escape code to reset the color
-    reset_color = '\033[0m'
-    print(f"{bold_white}{text}{reset_color}")
+    tqdm.write("\033[97m" + "\033[1m" + text + "\033[0m")
 
 def get_auth_token(user: str, password: str, host: str, protocol: str = "https", port: int = 55000, login_endpoint: str = "security/user/authenticate") -> Optional[str]:
     """
@@ -85,13 +54,17 @@ def get_auth_token(user: str, password: str, host: str, protocol: str = "https",
     }
     
     try:
-        print(f"Authenticating to manager ({host})...")
-        response = requests.post(login_url, headers=login_headers, verify=False)
+        print_white(f"Authenticating to manager ({host})...")
+        response = requests.post(login_url, headers=login_headers, verify=False, timeout=15)
         response.raise_for_status()  # Raise an error for bad responses
         token = json.loads(response.content.decode())['data']['token']
         print_green("Token obtained successfully.")
         return token
+    except requests.exceptions.Timeout as e:
+        print_red("Request timed out. Ensure the manager is running.")
     except requests.RequestException as e:
+        if not response:
+            print_red(f"Failed to connect to manager. Ensure the manager is running and accessible at {host}.")
         if response.status_code == 401:
             print_red("Unauthorized: Invalid username or password.")
         else:
@@ -100,7 +73,7 @@ def get_auth_token(user: str, password: str, host: str, protocol: str = "https",
         print_red("Unexpected response format.")
     except Exception as e:
         print_red(f"An error occurred: {e}")
-    
+
     return None
 
 def test_api_connection(token: str, host: str, protocol: str = "https", port: int = 55000, test_endpoint: str = "") -> bool:
@@ -111,8 +84,8 @@ def test_api_connection(token: str, host: str, protocol: str = "https", port: in
     }
 
     try:
-        print("Testing API connection ...")
-        response = requests.get(test_url, headers=test_headers, verify=False)
+        print_white("Testing API connection ...")
+        response = requests.get(test_url, headers=test_headers, verify=False, timeout=15)
         response.raise_for_status()
         
         # Check for title in data response
@@ -163,7 +136,7 @@ def get_all_test_groups(test_dir: str) -> List[str]:
 
     return directories
 
-def run_group_tests(group_path: str, token: str, host: str) -> Tuple[int, int, int]:
+def run_group_tests(group_path: str, token: str, host: str, max_threads: int = 1, timeout: int = 5) -> Tuple[int, int, int]:
     group_name = os.path.basename(group_path)
     print_bold_white(f"\n\nProcessing group: {group_name}")
 
@@ -184,17 +157,26 @@ def run_group_tests(group_path: str, token: str, host: str) -> Tuple[int, int, i
     else:
         print_green(f"Found {len(tests)} tests.")
                     
-    print("Running tests...")
-    
-    passed: List[WazuhLogTest] = []
-    failed: List[WazuhLogTest] = []
-    for test in tests:
-        result = run_test(test, token, host)
+    with tqdm(total=len(tests), desc="Running Tests", ascii=False,ncols=85, unit="test") as loading_bar:
 
-        if result:
-            passed.append(test)
-        else:
-            failed.append(test)
+        passed: List[WazuhLogTest] = []
+        failed: List[WazuhLogTest] = []
+        with ThreadPoolExecutor(max_workers=max_threads) as executor:
+            future_to_test = {executor.submit(run_test, test, token, host, timeout): test for test in tests}
+
+            for future in as_completed(future_to_test):
+                test = future_to_test[future]
+                try:
+                    result = future.result()
+                    if result:
+                        passed.append(test)
+                    else:
+                        failed.append(test)
+                except Exception as exc:
+                    print_red(f"Test generated an exception: {exc}")
+                    failed.append(test)
+                finally:
+                    loading_bar.update()
 
     if len(passed) == len(tests):
         print_green(f"All tests passed.")
@@ -204,7 +186,7 @@ def run_group_tests(group_path: str, token: str, host: str) -> Tuple[int, int, i
 
     return len(passed), skipped_tests, len(failed)
         
-def run_test(test: WazuhLogTest, token: str, host: str) -> bool:
+def run_test(test: WazuhLogTest, token: str, host: str, timeout: int) -> bool:
     """Runs a single Wazuh log test.
     
     Args:
@@ -230,7 +212,7 @@ def run_test(test: WazuhLogTest, token: str, host: str) -> bool:
         "Content-Type": "application/json"
     }
 
-    response = requests.put(test_url, headers=test_headers, data=json.dumps(log_test_data), verify=False)
+    response = requests.put(test_url, headers=test_headers, data=json.dumps(log_test_data), verify=False, timeout=timeout)
 
     if not response.ok:
         print_red(f"Test failed for rule ID {test.get_rule_id()}: {response.content.decode()}")
@@ -248,15 +230,25 @@ def run_test(test: WazuhLogTest, token: str, host: str) -> bool:
         return False
     
     # Verify the returned rule ID and description
-    returned_rule_id = logtest_json["data"]["output"]["rule"]["id"]
-    returned_rule_description = logtest_json["data"]["output"]["rule"]["description"]
+
+    try:
+        returned_rule_id = logtest_json["data"]["output"]["rule"]["id"]
+        returned_rule_description = logtest_json["data"]["output"]["rule"]["description"]
+        returned_rule_level = logtest_json["data"]["output"]["rule"]["level"]
+    except KeyError:
+        print_red(f"Test failed for rule ID {test.get_rule_id()}: Unexpected response format.")
+        return False
 
     if int(returned_rule_id) != test.get_rule_id():
-        print_red(f"Test failed for rule ID {test.get_rule_id()}: Returned: {returned_rule_id}.")
+        print_red(f"Test failed for rule ID {test.get_rule_id()}: Rule ID does not match: {returned_rule_id}")
         return False
     
     if returned_rule_description != test.get_rule_description():
-        print_red(f"Test failed for rule ID {test.get_rule_description()}: Returned: {returned_rule_description}.")
+        print_red(f"Test failed for rule ID {test.get_rule_id()}: Rule description does not match: {returned_rule_description}")
+        return False
+    
+    if returned_rule_level != test.get_rule_level():
+        print_red(f"Rule {test.get_rule_id()} failed. Expected level {test.get_rule_level()}, got {returned_rule_level}")
         return False
 
     return True
@@ -297,11 +289,12 @@ def read_test_file(group_path: str) -> Tuple[List[WazuhLogTest], int]:
                 rule_id=int(test["rule_id"]),
                 format=test["format"],
                 rule_description=test["description"],
-                log_file=os.path.join(group_path, test["log_file"])
+                log_file=os.path.join(group_path, test["log_file"]),
+                rule_level=int(test["rule_level"])
             )
             tests.append(test_obj)
         except ValueError as e:
-            print_red(f"Error creating WazuhLogTest object: {e}")
+            print_red(f"Error loading test: {e}")
             skipped_tests += 1
     
     return tests, skipped_tests
@@ -322,15 +315,67 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('-d', '--tests-dir', type=str, default="./tests", help="The directory containing the test groups. Defaults to './tests'.")
     parser.add_argument('-u', '--user', type=str, default="wazuh", help="The username for the Wazuh API. Defaults to 'wazuh'.")
     parser.add_argument('-p', '--password', type=str, default="wazuh", help="The password for the Wazuh API. Defaults to 'wazuh'.")
+    parser.add_argument('-t', '--threads', type=int, default=1, help="The number of threads to use for running tests. Defaults to 1.")
+    parser.add_argument('--timeout', type=int, default=5, help="The timeout for API requests. Defaults to 5 seconds.")
     
     return parser.parse_args()
 
+def validate_args(args: argparse.Namespace) -> bool:
+    """Checks if the provided arguments are valid.
+    
+    Args:
+    ----
+        args (argparse.Namespace): The parsed arguments.
+        
+    Returns:
+    -------
+        bool: True if the arguments are valid, otherwise False.
+    """
+    # Check if the tests directory exists
+    if not os.path.exists(args.tests_dir):
+        print_red(f"Tests directory {args.tests_dir} does not exist.")
+        return False
+    
+    # Check if the tests directory is empty
+    if not os.listdir(args.tests_dir):
+        print_red(f"Tests directory {args.tests_dir} is empty.")
+        return False
+    
+    # Check if the host is a valid IP address or hostname
+    if not args.host:
+        print_red("Host is required.")
+        return False
+    
+    if not args.user:
+        print_red("Username is required.")
+        return False
+    
+    if not args.password:
+        print_red("Password is required.")
+        return False
+    
+    if args.threads < 1:
+        print_red("Threads must be greater than 0.")
+        return False
+    
+    if args.timeout < 1:
+        print_red("Timeout must be greater than 0.")
+        return False
+    
+    return True
+
 def main():
     args = parse_arguments()
+
+    if not validate_args(args):
+        exit(1)
+
+    # Get the arguments
     host = args.host
     tests_dir = args.tests_dir
     username = args.user
     password = args.password
+    max_threads = args.threads
 
     token = get_auth_token(user=username, password=password, host=host)
 
@@ -357,15 +402,15 @@ def main():
     total_skipped = 0
     for group in test_groups:
         group_path = os.path.join(tests_dir, group)
-        passed, skipped, failed = run_group_tests(group_path, token, host)
+        passed, skipped, failed = run_group_tests(group_path, token, host, max_threads)
 
         total_passed += passed
         total_failed += failed
         total_skipped += skipped
 
     print_bold_white("\n\nTest Summary:\n============\n")
-    print(f"Total: {total_passed + total_failed}")
-    print_green(f"Passed: {total_passed}")
+    print(f"Total: {total_passed + total_failed + total_skipped}")
+    print_green(f"Passed: {total_passed}\n")
 
     if total_passed == (total_passed + total_failed + total_skipped):
         print_green(f"All tests passed.")

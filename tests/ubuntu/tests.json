@@ -5,7 +5,6 @@
             "rule_level": "9",
             "format": "wazuh",
             "description": "Agent event queue is full. Events may be lost.",
-            "log_location": "/this/will/not/affect/the/test",
             "log_file": "203.txt" 
         }
     ]

@@ -149,8 +149,10 @@ def run_group_tests(group_path: str, token: str, host: str, max_threads: int = 1
         print_yellow(f"Skipped {skipped_tests} tests due to errors.")
 
     if not tests:
-        print_red(f"No tests found in {group_name}.")
-        return 0, 0, 0
+        if skipped_tests == 0:
+            print_red(f"No tests found in {group_name}.")
+            
+        return 0, skipped_tests, 0
 
     if len(tests) == 1:
         print_green(f"Found 1 test.")
@@ -185,7 +187,31 @@ def run_group_tests(group_path: str, token: str, host: str, max_threads: int = 1
         print_red(f"{len(failed)} tests failed.")
 
     return len(passed), skipped_tests, len(failed)
-        
+
+def check_field(field_name: str, test_data: dict, api_data: dict, rule_id: int) -> bool:
+    """
+    Checks for matching key-value pairs between test data and API response data for a specified field.
+
+    Args:
+    ----
+        field_name (str): The name of the field being checked (e.g., "decoder", "predecoder").
+        test_data (dict): The expected key-value pairs for the field from the test.
+        api_data (dict): The actual key-value pairs for the field from the API response.
+        rule_id (int): The rule ID for which the test is being run.
+
+    Returns:
+    -------
+        bool: True if all keys exist and their values match; False otherwise.
+    """
+    for key, expected_value in test_data.items():
+        if key not in api_data:
+            print_red(f"[MISSING KEY] Field: {field_name}, Key: '{key}', Rule ID: {rule_id}.")
+            return False
+        if api_data[key] != expected_value:
+            print_red(f"[VALUE MISMATCH] Field: {field_name}, Key: '{key}', Expected: '{expected_value}', Got: '{api_data.get(key, 'N/A')}', Rule ID: {rule_id}.")
+            return False
+    return True
+
 def run_test(test: WazuhLogTest, token: str, host: str, timeout: int) -> bool:
     """Runs a single Wazuh log test.
     
@@ -236,36 +262,33 @@ def run_test(test: WazuhLogTest, token: str, host: str, timeout: int) -> bool:
         returned_rule_description = logtest_json["data"]["output"]["rule"]["description"]
         returned_rule_level = logtest_json["data"]["output"]["rule"]["level"]
     except KeyError:
-        print_red(f"Test failed for rule ID {test.get_rule_id()}: Unexpected response format.")
+        print_red(f"[FAILED TEST] Rule ID: {test.get_rule_id()}, Description: '{test.get_rule_description()}', Unexpected response format from Wazuh server.")
         return False
 
     if int(returned_rule_id) != test.get_rule_id():
-        print_red(f"Test failed for rule ID {test.get_rule_id()}: Rule ID does not match: {returned_rule_id}")
+        print_red(f"[FAILED TEST] Rule ID: {test.get_rule_id()}, Description: '{test.get_rule_description()}', Expected Level: {test.get_rule_id()}, Got: {returned_rule_id}")
         return False
     
     if returned_rule_description != test.get_rule_description():
-        print_red(f"Test failed for rule ID {test.get_rule_id()}: Rule description does not match: {returned_rule_description}")
+        print_red(f"[FAILED TEST] Rule ID: {test.get_rule_id()}, Description: '{test.get_rule_description()}', Expected Level: {test.get_rule_description()}, Got: {returned_rule_description}")
         return False
     
     if returned_rule_level != test.get_rule_level():
-        print_red(f"Rule {test.get_rule_id()} failed. Expected level {test.get_rule_level()}, got {returned_rule_level}")
+        print_red(f"[FAILED TEST] Rule ID: {test.get_rule_id()}, Description: '{test.get_rule_description()}', Expected Level: {test.get_rule_level()}, Got: {returned_rule_level}")
         return False
     
-    # Additional comparisons for decoder and predecoder, if they exist in the test
-    if test.get_decoder():
-        # Assuming decoder comparison is required to be against specific fields in the API response
-        api_decoder = logtest_json['data']['output'].get('decoder', {})
-        for key, value in test.get_decoder().items():
-            if key not in api_decoder or api_decoder[key] != value:
-                print_red(f"Decoder mismatch for key '{key}': expected '{value}', got '{api_decoder.get(key, 'N/A')}'")
-                return False
-
-    if test.get_predecoder():
+    # Additional comparisons for decoder and predecoder, if they exist in the
+    predecoder = test.get_predecoder()
+    if predecoder:
         api_predecoder = logtest_json['data']['output'].get('predecoder', {})
-        for key, value in test.get_predecoder().items():
-            if key not in api_predecoder or api_predecoder[key] != value:
-                print_red(f"Predecoder mismatch for key '{key}': expected '{value}', got '{api_predecoder.get(key, 'N/A')}'")
-                return False
+        if not check_field("predecoder", predecoder, api_predecoder, test.get_rule_id()):
+            return False
+
+    decoder = test.get_decoder()
+    if decoder:
+        api_decoder = logtest_json['data']['output'].get('decoder', {})
+        if not check_field("decoder", decoder, api_decoder, test.get_rule_id()): # 
+            return False
 
     return True
 
@@ -308,7 +331,8 @@ def read_test_file(group_path: str) -> Tuple[List[WazuhLogTest], int]:
                 log_file=os.path.join(group_path, test["log_file"]),
                 rule_level=int(test["rule_level"]),
                 predecoder=test.get("predecoder", None),
-                decoder=test.get("decoder", None)
+                decoder=test.get("decoder", None),
+                test_description=test.get("test_desc", None)
             )
             tests.append(test_obj)
         except ValueError as e:

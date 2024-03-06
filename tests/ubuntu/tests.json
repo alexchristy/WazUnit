@@ -1,6 +1,7 @@
 {
     "tests": [
         {
+            "test_desc": "Wazuh agent event queue is full",
             "rule_id": "203",
             "rule_level": "9",
             "format": "wazuh",
@@ -8,6 +9,7 @@
             "log_file": "203.txt" 
         },
         {
+            "test_desc": "SSH login to a non-existent user",
             "rule_id": "5710",
             "rule_level": "5",
             "format": "syslog",
@@ -15,6 +17,7 @@
             "log_file": "5710.txt"
         },
         {
+            "test_desc": "SSH login to a non-existent user from a local network",
             "rule_id": "5710",
             "rule_level": "5",
             "format": "syslog",

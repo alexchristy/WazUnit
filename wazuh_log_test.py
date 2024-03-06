@@ -4,7 +4,7 @@ import os
 class WazuhLogTest:
     """Class to represesnt a single Wazuh log test within a tests.json file."""
 
-    def __init__(self, rule_id: int, rule_level: int, format: str, rule_description: str, log_file: str,
+    def __init__(self, rule_id: int, rule_level: int, format: str, rule_description: str, log_file: str, test_description: str,
                  predecoder: Optional[Dict[str, str]] = None, decoder: Optional[Dict[str, str]] = None):
         """
         Constructor for the WazuhLogTest class.
@@ -15,23 +15,46 @@ class WazuhLogTest:
             rule_description (str): The description of the rule for the log test.
             log (str): The one line log to use for the test.
         """
-        if not rule_id or rule_id < 0 or not isinstance(rule_id, int):
-            raise ValueError("Rule ID cannot be empty.")
-        
-        if not rule_description or not isinstance(rule_description, str):
+        # Check if rule_id is empty or negative, and then check type
+        if rule_id is None or rule_id < 0:
+            raise ValueError("Rule ID must be provided and non-negative.")
+        if not isinstance(rule_id, int):
+            raise ValueError("Rule ID must be an integer.")
+
+        # Check if rule_description is empty, and then check type
+        if not rule_description:
             raise ValueError("Rule description cannot be empty.")
-        
-        if not log_file or not isinstance(log_file, str):
+        if not isinstance(rule_description, str):
+            raise ValueError("Rule description must be a string.")
+
+        # Check if log_file is empty, and then check type
+        if not log_file:
             raise ValueError("Log file cannot be empty.")
-        
+        if not isinstance(log_file, str):
+            raise ValueError("Log file must be a string.")
+
+        # Check if log file exists
         if not os.path.exists(log_file):
             raise ValueError(f"Log file: {log_file} does not exist.")
 
-        if not format or not isinstance(format, str):
+        # Check if format is empty, and then check type
+        if not format:
             raise ValueError("Log format cannot be empty.")
-        
-        if not rule_level or not isinstance(rule_level, int):
-            raise ValueError("Rule level cannot be empty.")
+        if not isinstance(format, str):
+            raise ValueError("Log format must be a string.")
+
+        # Check if rule_level is empty, and then check type
+        if rule_level is None:
+            raise ValueError("Rule level must be provided.")
+        if not isinstance(rule_level, int):
+            raise ValueError("Rule level must be an integer.")
+
+        # Assuming 'test_description' exists and needs similar checks
+        # Check if test_description is empty, and then check type
+        if not test_description:
+            raise ValueError("Test description cannot be empty.")
+        if not isinstance(test_description, str):
+            raise ValueError("Test description must be a string.")
 
         # New fields with validation
         if decoder and not isinstance(decoder, dict):
@@ -46,6 +69,7 @@ class WazuhLogTest:
         self.format = format
         self.decoder = decoder
         self.predecoder = predecoder
+        self.test_description = test_description
 
     def get_log(self) -> str:
         """
@@ -129,4 +153,14 @@ class WazuhLogTest:
             Optional[Dict[str, str]]: The predecoder dictionary or None if not present.
         """
         return self.predecoder
+    
+    def get_test_description(self) -> str:
+        """
+        Returns the test description for the test, if present.
+
+        Returns:
+        -------
+            Optional[str]: The test description or None if not present.
+        """
+        return self.test_description
     

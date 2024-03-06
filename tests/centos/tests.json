@@ -1,6 +1,7 @@
 {
     "tests": [
         {
+            "test_desc": "Server start rule test.",
             "rule_id": "502",
             "rule_level": "3",
             "format": "ossec",
@@ -8,6 +9,7 @@
             "log_file": "502.txt" 
         },
         {
+            "test_desc": "Sniffing mode rule test.",
             "rule_id": "5104",
             "rule_level": "8",
             "format": "syslog",

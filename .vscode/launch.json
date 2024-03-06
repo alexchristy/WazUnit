@@ -11,7 +11,7 @@
                 "-d", "./tests/",
                 "-u", "wazuh-api-user",
                 "-p", "DNSTooC00L@Skool",
-                "-t", "3",
+                "--threads", "1",
                 "10.0.0.5"
             ]
         }

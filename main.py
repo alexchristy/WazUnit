@@ -220,8 +220,8 @@ def run_test(test: WazuhLogTest, token: str, host: str, timeout: int) -> bool:
 
     logtest_json = response.json()
 
-    if not logtest_json:
-        print_red(f"Test failed for rule ID {test.get_rule_id()}: No response data.")
+    if not logtest_json or 'data' not in logtest_json or 'output' not in logtest_json['data']:
+        print_red(f"Test failed for rule ID {test.get_rule_id()}: Invalid or empty response.")
         return False
     
     # Check for errors from Wazuh
@@ -250,6 +250,22 @@ def run_test(test: WazuhLogTest, token: str, host: str, timeout: int) -> bool:
     if returned_rule_level != test.get_rule_level():
         print_red(f"Rule {test.get_rule_id()} failed. Expected level {test.get_rule_level()}, got {returned_rule_level}")
         return False
+    
+    # Additional comparisons for decoder and predecoder, if they exist in the test
+    if test.get_decoder():
+        # Assuming decoder comparison is required to be against specific fields in the API response
+        api_decoder = logtest_json['data']['output'].get('decoder', {})
+        for key, value in test.get_decoder().items():
+            if key not in api_decoder or api_decoder[key] != value:
+                print_red(f"Decoder mismatch for key '{key}': expected '{value}', got '{api_decoder.get(key, 'N/A')}'")
+                return False
+
+    if test.get_predecoder():
+        api_predecoder = logtest_json['data']['output'].get('predecoder', {})
+        for key, value in test.get_predecoder().items():
+            if key not in api_predecoder or api_predecoder[key] != value:
+                print_red(f"Predecoder mismatch for key '{key}': expected '{value}', got '{api_predecoder.get(key, 'N/A')}'")
+                return False
 
     return True
 
@@ -290,7 +306,9 @@ def read_test_file(group_path: str) -> Tuple[List[WazuhLogTest], int]:
                 format=test["format"],
                 rule_description=test["description"],
                 log_file=os.path.join(group_path, test["log_file"]),
-                rule_level=int(test["rule_level"])
+                rule_level=int(test["rule_level"]),
+                predecoder=test.get("predecoder", None),
+                decoder=test.get("decoder", None)
             )
             tests.append(test_obj)
         except ValueError as e:

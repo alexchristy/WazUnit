@@ -12,6 +12,13 @@
             "rule_level": "8",
             "format": "syslog",
             "description": "Interface entered in promiscuous(sniffing) mode.",
+            "predecoder": {
+                "hostname": "ip-10-0-0-12",
+                "timestamp": "Mar  5 08:44:55"
+            },
+            "decoder": {
+                "name": "kernel"
+            },
             "log_file": "5104.txt"
         }
     ]

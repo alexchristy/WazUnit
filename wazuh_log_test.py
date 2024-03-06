@@ -1,10 +1,11 @@
-from typing import List
+from typing import Dict, List, Optional
 import os
 
 class WazuhLogTest:
-    """Class to represesnt a single Wazuh log test file."""
+    """Class to represesnt a single Wazuh log test within a tests.json file."""
 
-    def __init__(self, rule_id: int, rule_level: int, format: str, rule_description: str, log_file: str):
+    def __init__(self, rule_id: int, rule_level: int, format: str, rule_description: str, log_file: str,
+                 predecoder: Optional[Dict[str, str]] = None, decoder: Optional[Dict[str, str]] = None):
         """
         Constructor for the WazuhLogTest class.
         
@@ -32,11 +33,19 @@ class WazuhLogTest:
         if not rule_level or not isinstance(rule_level, int):
             raise ValueError("Rule level cannot be empty.")
 
+        # New fields with validation
+        if decoder and not isinstance(decoder, dict):
+            raise ValueError("Decoder must be a dictionary.")
+        if predecoder and not isinstance(predecoder, dict):
+            raise ValueError("Predecoder must be a dictionary.")
+
         self.rule_id = rule_id
         self.rule_level = rule_level
         self.rule_description = rule_description
         self.log_file = log_file
         self.format = format
+        self.decoder = decoder
+        self.predecoder = predecoder
 
     def get_log(self) -> str:
         """
@@ -101,4 +110,23 @@ class WazuhLogTest:
         """
         return self.format
 
+    def get_decoder(self) -> Optional[Dict[str, str]]:
+        """
+        Returns the decoder dictionary for the test, if present.
+
+        Returns:
+        -------
+            Optional[Dict[str, str]]: The decoder dictionary or None if not present.
+        """
+        return self.decoder
+
+    def get_predecoder(self) -> Optional[Dict[str, str]]:
+        """
+        Returns the predecoder dictionary for the test, if present.
+
+        Returns:
+        -------
+            Optional[Dict[str, str]]: The predecoder dictionary or None if not present.
+        """
+        return self.predecoder
     

@@ -90,7 +90,7 @@ tests/
 
 ### tests.json
 
-This file defines all the tests within a group. This is where you can define the correct output for each test. Below is a snippet of one of the example `tests.json` files included in the repo.
+This file defines all the tests within a group. This is where you can define the correct output for each test. Below is an example test included in the `tests/centos/tests.json`. It has every check that the script supports. Further down you will find the corresponding Wazuh output that this test compares against.
 
 ```json
 {
@@ -113,6 +113,16 @@ This file defines all the tests within a group. This is where you can define the
     ]
 }
 ```
+
+**Coresponding ouput in Wazuh:**
+
+Below is the output of the 5104.txt log in the Wazuh ruletest utility. The screenshots below show the corresponding output that each test is compared against.
+
+![image](https://github.com/alexchristy/Wazuh-Rule-Test/assets/80216803/26a0eaea-f027-4de9-ae1f-2403377a52c3)
+
+![image](https://github.com/alexchristy/Wazuh-Rule-Test/assets/80216803/8da44219-a966-4485-ab9c-959393142af1)
+
+![wazuh_test_rule](https://github.com/alexchristy/Wazuh-Rule-Test/assets/80216803/ed721891-1fb6-4a31-9fa3-7d5f10557b5e)
 
 **Attributes:**
 

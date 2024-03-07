@@ -86,7 +86,7 @@ tests/
      (...)
 ```
 
-*See the tests directory for a usable example.*
+*See the tests directory for example rules that can be used with a default Wazuh manager installation.*
 
 ### tests.json
 

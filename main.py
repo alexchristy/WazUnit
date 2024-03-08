@@ -266,11 +266,11 @@ def run_test(test: WazuhLogTest, token: str, host: str, timeout: int) -> bool:
         return False
 
     if int(returned_rule_id) != test.get_rule_id():
-        print_red(f"[FAILED TEST] Rule ID: {test.get_rule_id()}, Description: '{test.get_rule_description()}', Expected Level: {test.get_rule_id()}, Got: {returned_rule_id}")
+        print_red(f"[FAILED TEST] Rule ID: {test.get_rule_id()}, Description: '{test.get_rule_description()}', Expected ID: {test.get_rule_id()}, Got: {returned_rule_id}")
         return False
     
     if returned_rule_description != test.get_rule_description():
-        print_red(f"[FAILED TEST] Rule ID: {test.get_rule_id()}, Description: '{test.get_rule_description()}', Expected Level: {test.get_rule_description()}, Got: {returned_rule_description}")
+        print_red(f"[FAILED TEST] Rule ID: {test.get_rule_id()}, Description: '{test.get_rule_description()}', Expected Description: {test.get_rule_description()}, Got: {returned_rule_description}")
         return False
     
     if returned_rule_level != test.get_rule_level():

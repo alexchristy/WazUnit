@@ -60,7 +60,7 @@ def get_auth_token(user: str, password: str, host: str, protocol: str = "https",
         token = json.loads(response.content.decode())['data']['token']
         print_green("Token obtained successfully.")
         return token
-    except requests.exceptions.Timeout as e:
+    except requests.exceptions.Timeout:
         print_red("Request timed out. Ensure the manager is running.")
     except requests.RequestException as e:
         if not response:
@@ -155,7 +155,7 @@ def run_group_tests(group_path: str, token: str, host: str, max_threads: int = 1
         return 0, skipped_tests, 0
 
     if len(tests) == 1:
-        print_green(f"Found 1 test.")
+        print_green("Found 1 test.")
     else:
         print_green(f"Found {len(tests)} tests.")
                     
@@ -181,7 +181,7 @@ def run_group_tests(group_path: str, token: str, host: str, max_threads: int = 1
                     loading_bar.update()
 
     if len(passed) == len(tests):
-        print_green(f"All tests passed.")
+        print_green("All tests passed.")
     else:
         print_yellow(f"{len(passed)} tests passed.")
         print_red(f"{len(failed)} tests failed.")
@@ -455,7 +455,7 @@ def main():
     print_green(f"Passed: {total_passed}\n")
 
     if total_passed == (total_passed + total_failed + total_skipped):
-        print_green(f"All tests passed.")
+        print_green("All tests passed.")
     else:
         print_yellow(f"Skipped: {total_skipped}")
         print_red(f"Failed: {total_failed}")

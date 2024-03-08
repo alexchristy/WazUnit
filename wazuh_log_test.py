@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 import os
 
 class WazuhLogTest:
@@ -17,21 +17,21 @@ class WazuhLogTest:
         """
         # Check if rule_id is empty or negative, and then check type
         if rule_id is None or rule_id < 0:
-            raise ValueError("Rule ID must be provided and non-negative.")
+            raise ValueError("Rule ID (rule_id) must be provided and non-negative.")
         if not isinstance(rule_id, int):
-            raise ValueError("Rule ID must be an integer.")
+            raise ValueError("Rule ID (rule_id) must be an integer.")
 
         # Check if rule_description is empty, and then check type
         if not rule_description:
-            raise ValueError("Rule description cannot be empty.")
+            raise ValueError("Rule description (description) cannot be empty.")
         if not isinstance(rule_description, str):
-            raise ValueError("Rule description must be a string.")
+            raise ValueError("Rule description (description) must be a string.")
 
         # Check if log_file is empty, and then check type
         if not log_file:
-            raise ValueError("Log file cannot be empty.")
+            raise ValueError("Log file (log) cannot be empty.")
         if not isinstance(log_file, str):
-            raise ValueError("Log file must be a string.")
+            raise ValueError("Log file (log) must be a string.")
 
         # Check if log file exists
         if not os.path.exists(log_file):
@@ -39,22 +39,22 @@ class WazuhLogTest:
 
         # Check if format is empty, and then check type
         if not format:
-            raise ValueError("Log format cannot be empty.")
+            raise ValueError("Log format (format) cannot be empty.")
         if not isinstance(format, str):
-            raise ValueError("Log format must be a string.")
+            raise ValueError("Log format (format) must be a string.")
 
         # Check if rule_level is empty, and then check type
         if rule_level is None:
-            raise ValueError("Rule level must be provided.")
+            raise ValueError("Rule level (rule_level) must be provided.")
         if not isinstance(rule_level, int):
-            raise ValueError("Rule level must be an integer.")
+            raise ValueError("Rule level (rule_level) must be an integer.")
 
         # Assuming 'test_description' exists and needs similar checks
         # Check if test_description is empty, and then check type
         if not test_description:
-            raise ValueError("Test description cannot be empty.")
+            raise ValueError("Test description (test_desc) cannot be empty.")
         if not isinstance(test_description, str):
-            raise ValueError("Test description must be a string.")
+            raise ValueError("Test description (test_desc) must be a string.")
 
         # New fields with validation
         if decoder and not isinstance(decoder, dict):

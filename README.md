@@ -1,6 +1,6 @@
 <a name="readme-top"></a>
 
-# Wazuh Rule Test
+# WazUnit Testing
 
 <!-- TABLE OF CONTENTS -->
 <details>
